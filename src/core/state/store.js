@@ -5,7 +5,7 @@
     global.Itera.State = global.Itera.State || {};
 
     class StorageManager {
-        constructor(dbName = 'itera_core_db') {
+        constructor(dbName = 'myakura_core_db') {
             this.dbName = dbName;
             this.db = null;
             this.STORE_SNAPSHOTS = 'snapshots';
