@@ -3169,7 +3169,7 @@ window.ExcelEngine = ExcelEngine;`.trim(),
     }
 
     async function openFromPrompt() {
-        const path = await ask('VFS上の .xlsx パスを入力してください。', 'data/spreadsheets/QA_List.xlsx', 'Open Workbook');
+        const path = await ask('VFS上の .xlsx パスを入力してください。', 'data/spreadsheets/mitsumori.xlsx', 'Open Workbook');
         if (!path) return;
 
         await withLoading('Opening workbook...', async () => {
