@@ -1,11 +1,11 @@
 // AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
-// Generated on: 2026-05-20T05:30:07Z
+// Generated on: 2026-05-20T05:38:11Z
 
 (function(global) {
     global.Itera = global.Itera || {};
     global.Itera.Config = global.Itera.Config || {};
 
-    global.Itera.Config.BUILD_TIME = new Date("2026-05-20T05:30:07Z").getTime();
+    global.Itera.Config.BUILD_TIME = new Date("2026-05-20T05:38:11Z").getTime();
     global.Itera.Config.DEFAULT_FILES = {
         "index.html": `
 <!DOCTYPE html>
@@ -414,7 +414,7 @@ AutoExcelは積算統合専用アプリではありませんが、以下の汎�
 - 仮想スクロール
 - AIによる表構造推定・見出し検出`.trim(),
 
-        "docs/jobs/見積統合.md": `
+        "docs/jobs/積算統合.md": `
 # 積算内訳書統合ワークフローマニュアル
 
 ## 1. 概要
