@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoExcel</title>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+    <link rel="stylesheet" href="../system/lib/autoexcel/css/autoexcel.css">
+</head>
+<body>
+    <div id="toast-container" class="toast-container"></div>
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loader"></div>
+        <div id="loading-message" class="loading-message">Processing...</div>
+    </div>
+
+    <header class="app-header">
+        <div class="header-left">
+            <button id="btn-home" class="icon-button" title="Home">←</button>
+            <div class="app-title">
+                <span class="app-badge">XLSX</span>
+                <span>AutoExcel</span>
+            </div>
+            <div id="status-label" class="status-label"></div>
+        </div>
+        <div class="header-actions">
+            <button id="btn-open" class="toolbar-btn">📂 Open</button>
+            <button id="btn-new" class="toolbar-btn">＋ New</button>
+            <button id="btn-save" class="toolbar-btn primary">💾 Save</button>
+        </div>
+    </header>
+
+    <section class="book-tab-bar">
+        <div id="book-tabs" class="book-tabs"></div>
+        <button id="btn-new-tab" class="new-tab-button">＋</button>
+    </section>
+
+    <main class="app-main">
+        <div class="formula-bar">
+            <span id="active-cell-label" class="active-cell-label">Cell: -</span>
+            <input id="formula-input" class="formula-input" placeholder="値または数式を入力">
+            <button id="btn-apply-input" class="toolbar-btn small">Apply</button>
+            <button id="btn-bold" class="toolbar-btn small bold-button" title="Bold">B</button>
+            <button id="btn-fill-yellow" class="toolbar-btn small" title="Yellow fill">Fill</button>
+        </div>
+
+        <div id="grid-container" class="grid-container"></div>
+
+        <div class="sheet-tab-bar">
+            <div id="sheet-tabs" class="sheet-tabs"></div>
+            <button id="btn-add-sheet" class="add-sheet-button">＋</button>
+        </div>
+    </main>
+
+    <script src="../system/lib/autoexcel/js/style-utils.js"></script>
+    <script src="../system/lib/autoexcel/js/vfs-io.js"></script>
+    <script src="../system/lib/autoexcel/js/excel-engine.js"></script>
+    <script src="../system/lib/autoexcel/js/workbook-manager.js"></script>
+    <script src="../system/lib/autoexcel/js/grid-renderer.js"></script>
+    <script src="../system/lib/autoexcel/js/tools-binder.js"></script>
+    <script src="../system/lib/autoexcel/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ミャク楽AI</title>
+
+    <!-- Universal OAuth Callback Interceptor -->
+    <script>
+        (function() {
+            // 親ウィンドウが存在し、かつURLにOAuth特有のパラメータが含まれているか判定
+            if (window.opener && window.opener !== window && window.location.href.match(/[#?&](access_token|code|state|error)=/)) {
+                // 解析の責務は親ウィンドウに委譲し、URLの情報をそのまま送信する
+                window.opener.postMessage({
+                    type: 'ITERA_OAUTH_CALLBACK',
+                    hash: window.location.hash,
+                    search: window.location.search
+                }, window.location.origin);
+                
+                // 自身を閉じる（OSの重いロードをスキップ）
+                window.close();
+            }
+        })();
+    </script>
+
+    <!-- Icon -->
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    
+    <!-- MathJax -->
+    <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Highlight.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans:['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', '"Noto Sans JP"', '"Noto Sans"', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif', '"Apple Color Emoji"', '"Segoe UI Emoji"', '"Segoe UI Symbol"', '"Noto Color Emoji"']
+                    },
+                    colors: {
+                        // Semantic Tokens (mapped to CSS Variables)
+                        
+                        // Backgrounds
+                        app: 'rgb(var(--c-bg-app) / <alpha-value>)',
+                        panel: 'rgb(var(--c-bg-panel) / <alpha-value>)',
+                        card: 'rgb(var(--c-bg-card) / <alpha-value>)',
+                        hover: 'rgb(var(--c-bg-hover) / <alpha-value>)',
+                        overlay: 'rgb(var(--c-bg-overlay) / <alpha-value>)', // ★ New: 背景オーバーレイ
+                        
+                        // Borders
+                        border: {
+                            main: 'rgb(var(--c-border-main) / <alpha-value>)',
+                            highlight: 'rgb(var(--c-border-highlight) / <alpha-value>)',
+                        },
+                        
+                        // Text
+                        text: {
+                            main: 'rgb(var(--c-text-main) / <alpha-value>)',
+                            muted: 'rgb(var(--c-text-muted) / <alpha-value>)',
+                            inverted: 'rgb(var(--c-text-inverted) / <alpha-value>)',
+                            system: 'rgb(var(--c-text-system) / <alpha-value>)',           // ★ New: システムメッセージ
+                            'tag-attr': 'rgb(var(--c-text-tag-attr) / <alpha-value>)',      // ★ New: タグ属性
+                            'tag-content': 'rgb(var(--c-text-tag-content) / <alpha-value>)' // ★ New: タグ本文
+                        },
+                        
+                        // Accents
+                        primary: 'rgb(var(--c-accent-primary) / <alpha-value>)',
+                        success: 'rgb(var(--c-accent-success) / <alpha-value>)',
+                        warning: 'rgb(var(--c-accent-warning) / <alpha-value>)',
+                        error: 'rgb(var(--c-accent-error) / <alpha-value>)',
+
+                        // Tags (Backgrounds & Borders)
+                        tag: {
+                            thinking: 'rgb(var(--c-tag-thinking) / <alpha-value>)',
+                            plan: 'rgb(var(--c-tag-plan) / <alpha-value>)',
+                            report: 'rgb(var(--c-tag-report) / <alpha-value>)',
+                            error: 'rgb(var(--c-tag-error) / <alpha-value>)',
+                        },
+
+                        // Legacy / Utils
+                        gray: { 750: '#2d3748', 850: '#1a202c', 950: '#0d1117' }
+                    },
+                    animation: {
+                        'fade-out': 'fadeOut 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeOut: { '0%': { opacity: '1' }, '100%': { opacity: '0', visibility: 'hidden' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { height: 100vh; height: 100dvh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgb(var(--c-bg-hover)); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-text-muted)); }
+        
+        .resizer {
+            width: 4px; background: rgb(var(--c-bg-panel)); cursor: col-resize; flex-shrink: 0; z-index: 50;
+            border-left: 1px solid rgb(var(--c-border-main)); transition: background 0.2s;
+        }
+        .resizer:hover, .resizer.resizing { background: rgb(var(--c-accent-primary)); }
+        
+        .loader {
+            border: 3px solid rgb(var(--c-bg-card)); border-top: 3px solid rgb(var(--c-accent-primary)); border-radius: 50%;
+            width: 24px; height: 24px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+        /* Highlight.js Theme (Dynamic OS Colors) */
+        .hljs { color: rgb(var(--c-text-main)); background: transparent; }
+        .hljs-keyword, .hljs-selector-tag, .hljs-addition { color: rgb(var(--c-accent-primary)); }
+        .hljs-string, .hljs-meta .hljs-meta-string, .hljs-doctag, .hljs-regexp { color: rgb(var(--c-accent-success)); }
+        .hljs-title, .hljs-section, .hljs-name, .hljs-selector-id, .hljs-selector-class { color: rgb(var(--c-accent-warning)); font-weight: bold; }
+        .hljs-attr, .hljs-attribute, .hljs-variable, .hljs-template-variable, .hljs-class .hljs-title, .hljs-type { color: rgb(var(--c-text-system)); }
+        .hljs-symbol, .hljs-bullet, .hljs-subst, .hljs-meta, .hljs-meta .hljs-keyword, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-link { color: rgb(var(--c-text-system)); }
+        .hljs-built_in, .hljs-deletion { color: rgb(var(--c-accent-error)); }
+        .hljs-comment, .hljs-quote { color: rgb(var(--c-text-muted)); font-style: italic; }
+        .hljs-number, .hljs-literal { color: rgb(var(--c-accent-warning)); }
+
+        /* Fallback for FOUC prevention */
+        :root {
+            /* Backgrounds */
+            --c-bg-app: 17 24 39;
+            --c-bg-panel: 31 41 55;
+            --c-bg-card: 55 65 81;
+            --c-bg-hover: 75 85 99;
+            --c-bg-overlay: 0 0 0; /* ★ New */
+
+            /* Borders */
+            --c-border-main: 55 65 81;
+            --c-border-highlight: 59 130 246;
+
+            /* Text */
+            --c-text-main: 243 244 246;
+            --c-text-muted: 156 163 175;
+            --c-text-inverted: 17 24 39;
+            --c-text-system: 96 165 250;       /* ★ New (#60a5fa) */
+            --c-text-tag-attr: 156 163 175;    /* ★ New (#9ca3af) */
+            --c-text-tag-content: 209 213 219; /* ★ New (#d1d5db) */
+
+            /* Accents */
+            --c-accent-primary: 37 99 235;
+            --c-accent-success: 5 150 105;
+            --c-accent-warning: 217 119 6;
+            --c-accent-error: 220 38 38;
+        }
+    </style>
+</head>
+<body class="bg-app text-text-main flex flex-col font-sans antialiased selection:bg-primary/30">
+
+    <!-- Boot Loader -->
+    <div id="boot-loader" class="fixed inset-0 z-[9999] bg-app flex flex-col items-center justify-center">
+        <div class="loader mb-4 w-10 h-10 border-4 border-t-primary"></div>
+        <div class="text-sm text-text-muted font-mono animate-pulse">Initializing ミャク楽AI...</div>
+    </div>
+
+    <!-- Header -->
+    <header class="h-12 bg-panel border-b border-border-main flex items-center justify-between px-4 shrink-0 z-20 shadow-sm relative">
+        <div class="flex items-center gap-2">
+            <img src="assets/icon.svg" class="w-6 h-6 rounded shadow-lg shadow-black/20" alt="Logo">
+            <h1 class="font-bold text-text-main tracking-wide text-sm">ミャク楽AI</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-open-api-modal" class="text-xs bg-card hover:bg-hover px-3 py-1 rounded transition border border-border-main hover:text-text-main text-text-muted flex items-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-4l5.659-5.659A6 6 0 1121 9z"></path></svg>
+                Keys
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <!-- Mobile Overlay -->
+        <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden backdrop-blur-[2px] transition-opacity"></div>
+
+        <!-- 1. LEFT SIDEBAR -->
+        <div id="sidebar" class="bg-panel flex flex-col shrink-0 md:relative fixed inset-y-0 left-0 z-40 w-[260px] transition-transform duration-300 -translate-x-full md:translate-x-0 border-r border-border-main shadow-2xl md:shadow-none h-full">
+            <!-- Controls -->
+            <div class="h-10 bg-app border-b border-border-main flex items-center justify-between px-3 shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_4px_rgba(var(--c-accent-success),0.5)]"></div>
+                    <span class="text-xs font-bold text-text-main tracking-wide">System</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button id="btn-sync" title="Cloud Sync" class="p-1.5 text-text-muted hover:text-primary hover:bg-hover rounded transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                    </button>
+                    <button id="btn-history" title="Time Machine" class="p-1.5 text-text-muted hover:text-text-main hover:bg-hover rounded transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                    <div class="w-px h-4 bg-border-main mx-1"></div>
+                    <button id="btn-reset" title="Factory Reset" class="p-1.5 text-error hover:text-text-main hover:bg-error rounded transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Storage -->
+            <div class="py-3 px-4 border-b border-border-main bg-panel/50 flex flex-col gap-1.5">
+                <div class="flex justify-between items-baseline text-[10px]">
+                    <span class="font-bold text-text-muted uppercase tracking-wider">Storage</span>
+                    <span id="storage-usage-text" class="font-mono text-text-muted">0.0 / 256.0 MB</span>
+                </div>
+                <div class="relative w-full h-1 bg-card rounded-full overflow-hidden">
+                    <div id="storage-usage-bar" class="absolute top-0 left-0 h-full bg-primary w-0" style="transition: width 0.5s ease;"></div>
+                </div>
+                <div class="flex justify-between items-center h-4 mt-0.5">
+                    <span id="save-status" class="text-[9px] text-success italic opacity-0">Saved</span>
+                    <div class="flex gap-3 text-text-muted">
+                        <input type="file" id="import-backup-input" class="hidden" accept=".zip,.bk">
+                        <button id="btn-import-backup" title="Restore Zip" class="hover:text-text-main transition hover:scale-105">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        </button>
+                        <button id="btn-download" title="Export Zip" class="hover:text-text-main transition hover:scale-105">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Tree -->
+            <div class="flex-1 overflow-y-auto p-0" id="file-explorer"></div>
+            <!-- Upload -->
+            <div class="p-3 border-t border-border-main space-y-2 bg-panel pb-20 md:pb-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="block text-center cursor-pointer bg-card hover:bg-hover py-1.5 rounded text-[10px] text-text-muted hover:text-text-main transition border border-border-main border-dashed hover:border-text-muted">
+                        Folder
+                        <input type="file" id="folder-upload" class="hidden" webkitdirectory directory multiple>
+                    </label>
+                    <label class="block text-center cursor-pointer bg-card hover:bg-hover py-1.5 rounded text-[10px] text-text-muted hover:text-text-main transition border border-border-main border-dashed hover:border-text-muted">
+                        Files
+                        <input type="file" id="files-upload" class="hidden" multiple>
+                    </label>
+                    <input type="file" id="context-upload-input" class="hidden" multiple>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resizer 1 -->
+        <div id="explorer-resizer" class="resizer hidden md:block"></div>
+
+        <!-- 2. CENTER -->
+        <div class="flex-1 flex flex-col bg-app min-w-0 relative h-full pb-14 md:pb-0">
+            <!-- Toolbar (Center Column) -->
+            <div class="h-10 bg-panel border-b border-border-main flex items-center px-4 gap-2 shrink-0 z-10">
+                <button id="btn-home" class="text-text-muted hover:text-text-main p-1 rounded hover:bg-hover transition" title="Home">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                </button>
+                
+                <button id="btn-refresh" class="text-text-muted hover:text-text-main p-1 rounded hover:bg-hover transition" title="Reload">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+                <div class="flex-1 bg-app rounded px-3 py-1 text-[11px] text-text-muted font-mono border border-border-main flex items-center shadow-inner relative group focus-within:ring-1 focus-within:ring-primary/50">
+                    <span class="text-success mr-2 text-[10px] shrink-0">🔒</span> 
+                    <input type="text" id="preview-address-bar" class="bg-transparent border-none outline-none flex-1 w-full text-text-main truncate placeholder-text-muted pr-6" value="metaos://view" spellcheck="false" autocomplete="off">
+                    <button id="btn-address-go" class="absolute right-1 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition opacity-0 pointer-events-none group-focus-within:opacity-100 group-focus-within:pointer-events-auto flex items-center justify-center p-1 rounded hover:bg-hover">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Preview -->
+            <div class="flex-1 relative bg-app overflow-hidden group">
+                <iframe id="preview-frame" class="w-full h-full border-none bg-white" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"></iframe>
+                <div id="preview-loader" class="absolute inset-0 bg-app/80 flex items-center justify-center hidden z-20 backdrop-blur-sm">
+                    <div class="text-center">
+                        <div class="loader mx-auto mb-3"></div>
+                        <span class="text-xs text-text-muted font-medium tracking-wide">Compiling...</span>
+                    </div>
+                </div>
+                <!-- Editor Overlay -->
+                <div id="editor-overlay" class="absolute inset-0 bg-app hidden z-30 flex flex-col">
+                    <div class="h-9 bg-panel flex justify-between items-center px-4 border-b border-border-main shrink-0">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            <span id="editor-filename" class="text-xs font-mono text-text-main truncate">filename.js</span>
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <button id="btn-save-editor" class="text-[10px] font-bold bg-primary hover:bg-primary/80 px-3 py-1 rounded text-white transition shadow-sm border border-primary/50">Save</button>
+                            <button id="btn-close-editor" class="text-text-muted hover:text-text-main hover:bg-hover rounded w-6 h-6 flex items-center justify-center transition">✕</button>
+                        </div>
+                    </div>
+                    <div id="code-editor" class="flex-1 bg-app overflow-hidden pb-14 md:pb-0"></div>
+                </div>
+                <!-- Media Overlay -->
+                <div id="media-overlay" class="absolute inset-0 bg-app/95 hidden z-40 flex flex-col items-center justify-center backdrop-blur-sm">
+                    <div class="absolute top-0 left-0 right-0 h-10 bg-panel/80 flex justify-between items-center px-4 border-b border-border-main">
+                        <span id="media-filename" class="text-xs font-mono text-text-muted">file</span>
+                        <button id="btn-close-media" class="text-text-muted hover:text-text-main text-lg leading-none p-2">✕</button>
+                    </div>
+                    <img id="media-image" class="max-w-[90%] max-h-[80%] rounded shadow-2xl border border-border-main bg-panel object-contain hidden">
+                </div>
+            </div>
+            <div class="h-6 bg-panel border-t border-border-main flex items-center justify-between px-3 shrink-0 select-none z-10 hidden md:flex">
+                <div class="flex items-center gap-4">
+                    <span class="flex items-center gap-1.5 text-[10px] text-text-muted font-mono">
+                        <span class="block w-1.5 h-1.5 rounded-full bg-success/50 shadow-[0_0_4px_rgba(var(--c-accent-success),0.5)]"></span>
+                        Ready
+                    </span>
+                    <span class="hidden sm:inline-block text-[10px] text-text-muted border-l border-border-main pl-3">Itera Runtime</span>
+                </div>
+                <div class="text-[10px] text-text-muted font-mono">v1.1.0</div>
+            </div>
+        </div>
+
+        <!-- Resizer 2 -->
+        <div id="chat-resizer" class="resizer hidden md:block"></div>
+
+        <!-- 3. RIGHT SIDEBAR (Chat) -->
+        <div id="chat-panel" class="bg-panel flex flex-col shrink-0 md:relative fixed inset-y-0 right-0 z-40 w-full sm:w-96 md:w-[400px] transition-transform duration-300 translate-x-full md:translate-x-0 border-l border-border-main shadow-2xl md:shadow-none h-full">
+             <div class="h-10 border-b border-border-main flex items-center justify-between px-3 bg-panel shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider">ミャク楽AI エージェント</span>
+                    <span id="model-status" class="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">Loading...</span>
+                </div>
+                <button id="btn-clear-chat" title="Clear History" class="text-text-muted hover:text-error p-1 rounded hover:bg-hover transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+            <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-app/50 scroll-smooth"></div>
+            <div class="p-3 bg-panel border-t border-border-main pb-20 md:pb-3">
+                <div id="file-preview-area" class="mb-2 hidden flex flex-wrap gap-2"></div>
+                <div id="ai-typing" class="text-xs text-primary mb-2 hidden flex items-center gap-1">
+                    <span class="animate-pulse">●</span> Thinking...
+                </div>
+                <div class="relative bg-app border border-border-main rounded-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition shadow-inner">
+                    <textarea id="chat-input" rows="3" 
+                        class="w-full bg-transparent border-none text-sm text-text-main focus:ring-0 focus:outline-none p-3 pb-10 resize-none"
+                        placeholder="Instructions... (Ctrl+Enter)"></textarea>
+                    <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+                        <label class="cursor-pointer text-text-muted hover:text-text-main p-1.5 rounded hover:bg-hover transition" title="Attach file">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                            <input type="file" id="chat-file-upload" class="hidden" multiple>
+                        </label>
+                        <div>
+                            <button id="btn-send" class="p-1.5 bg-primary hover:bg-primary/80 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
+                            <button id="btn-stop" class="p-1.5 bg-error hover:bg-error/80 text-white rounded transition hidden shadow-sm">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-panel border-t border-border-main flex items-center justify-around z-50 shadow-up pb-safe">
+        <button id="mobile-nav-files" class="flex flex-col items-center justify-center w-full h-full text-text-muted hover:text-text-main hover:bg-hover transition">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+            <span class="text-[10px]">Files</span>
+        </button>
+        <button id="mobile-nav-view" class="flex flex-col items-center justify-center w-full h-full text-primary font-bold bg-hover">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span class="text-[10px]">View</span>
+        </button>
+        <button id="mobile-nav-chat" class="flex flex-col items-center justify-center w-full h-full text-text-muted hover:text-text-main hover:bg-hover transition">
+            <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            <span class="text-[10px]">Chat</span>
+        </button>
+    </nav>
+
+    <!-- Global Modals -->
+    <div id="resize-overlay" class="fixed inset-0 z-[9999] hidden cursor-col-resize"></div>
+    <div id="context-menu" class="fixed hidden z-[100] bg-panel border border-border-main rounded shadow-xl py-1 min-w-[140px]"></div>
+
+    <!-- Background Processes (Daemons) -->
+    <div id="background-processes" class="hidden"></div>
+
+    <!-- Sync Modal -->
+    <div id="sync-modal" class="fixed inset-0 bg-black/80 z-[10000] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-panel rounded-lg shadow-2xl w-full max-w-md border border-border-main flex flex-col mx-4">
+            <div class="p-4 border-b border-border-main flex justify-between items-center bg-panel rounded-t-lg">
+                <h3 class="font-bold text-text-main flex items-center gap-2">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                    Cloud Sync
+                </h3>
+                <button id="btn-close-sync" class="text-text-muted hover:text-text-main transition w-6 h-6 flex items-center justify-center rounded hover:bg-hover">✕</button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-text-muted uppercase mb-2">Storage Provider</label>
+                    <select id="sync-provider-select" class="w-full bg-card border border-border-main rounded-md p-2 text-sm text-text-main focus:outline-none focus:border-primary">
+                        <option value="gdrive">Google Drive</option>
+                    </select>
+                </div>
+                
+                <div class="bg-card/50 p-4 rounded-lg border border-border-main/50 flex flex-col items-center justify-center text-center space-y-3">
+                    <div id="sync-status-text" class="text-sm font-mono mt-2">● Standby</div>
+                    <button id="btn-auth-gdrive" class="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 transition shadow">
+                        Sign in with Google
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-border-main bg-panel rounded-b-lg flex justify-between items-center">
+                <span class="text-[10px] text-text-muted font-mono">Syncs automatically every 5 mins</span>
+                <button id="btn-sync-now" class="px-4 py-2 rounded-lg text-sm font-medium bg-card hover:bg-hover border border-border-main transition">
+                    Sync Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Time Machine) -->
+    <div id="history-modal" class="fixed inset-0 bg-black/80 z-[10000] hidden flex items-center justify-center modal backdrop-blur-sm transition-opacity">
+        <div class="bg-panel rounded-lg shadow-2xl w-full max-w-md border border-border-main flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-border-main flex justify-between items-center bg-panel rounded-t-lg">
+                <h3 class="font-bold text-text-main flex items-center gap-2">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Time Machine & Settings
+                </h3>
+                <div class="flex items-center gap-2">
+                    <button id="btn-delete-all-snapshots" class="text-[10px] text-error hover:text-white bg-error/20 hover:bg-error px-2 py-1 rounded border border-error/30 transition">Delete All</button>
+                    <button id="btn-close-modal" class="text-text-muted hover:text-text-main transition w-6 h-6 flex items-center justify-center rounded hover:bg-hover">✕</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-2" id="snapshot-list"></div>
+            <div class="p-4 border-t border-border-main bg-app rounded-b-lg">
+                <button id="btn-create-snapshot" class="w-full bg-primary hover:bg-primary/80 text-white py-2 rounded text-sm font-bold transition shadow-lg">
+                    Create Snapshot Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Settings Modal -->
+    <div id="api-settings-modal" class="fixed inset-0 bg-black/80 z-[10000] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-panel rounded-lg shadow-2xl w-full max-w-md border border-border-main flex flex-col mx-4">
+            <div class="p-4 border-b border-border-main flex justify-between items-center bg-panel rounded-t-lg">
+                <h3 class="font-bold text-text-main flex items-center gap-2">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-4l5.659-5.659A6 6 0 1121 9z"></path></svg>
+                    API Keys (Secrets)
+                </h3>
+                <button id="btn-close-api-modal" class="text-text-muted hover:text-text-main transition w-6 h-6 flex items-center justify-center rounded hover:bg-hover">✕</button>
+            </div>
+            
+            <div class="p-4 space-y-5 overflow-y-auto max-h-[60vh] bg-app/50" id="api-settings-container">
+                <!-- Dynamically injected by ApiSettingsModal -->
+            </div>
+
+            <div class="p-4 border-t border-border-main bg-panel rounded-b-lg flex justify-end gap-2">
+                <button id="btn-cancel-api-modal" class="px-4 py-2 rounded text-sm font-medium text-text-muted hover:text-text-main hover:bg-hover transition border border-transparent hover:border-border-main">Cancel</button>
+                <button id="btn-save-api-modal" class="px-4 py-2 rounded text-sm font-bold bg-primary text-white hover:bg-primary/90 shadow transition border border-primary/50">Save Keys</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/core/state/vfs.js"></script>
+    <script src="src/core/state/store.js"></script>
+    <script src="src/core/state/config_manager.js"></script>
+    <script src="src/core/state/history.js"></script>
+    <script src="src/core/state/logger.js"></script>
+    
+    <!-- Sync Domain -->
+    <script src="src/core/sync/providers/base_provider.js"></script>
+    <script src="src/core/sync/providers/gdrive_provider.js"></script>
+    <script src="src/core/sync/sync_engine.js"></script>
+    <script src="src/core/sync/sync_manager.js"></script>
+    
+    <!-- Cognitive -->
+    <script src="src/core/cognitive/llm_adapter.js"></script>
+    <script src="src/core/cognitive/translator.js"></script>
+    <script src="src/core/cognitive/projector.js"></script>
+    
+    <!-- Control -->
+    <script src="src/core/control/tool_registry.js"></script>
+    <script src="src/core/control/tools/fs_tools.js"></script>
+    <script src="src/core/control/tools/ui_tools.js"></script>
+    <script src="src/core/control/tools/sys_tools.js"></script>
+    <script src="src/core/control/tools/search_tools.js"></script>
+    <script src="src/core/control/tools/basic_tools.js"></script>
+    <script src="src/core/control/engine.js"></script>
+    <script src="src/core/control/guest_compiler.js"></script>
+    
+    <!-- IPC Infrastructure -->
+    <script src="src/ipc/message.js"></script>
+    <script src="src/ipc/rpc_manager.js"></script>
+    <script src="src/ipc/host_transport.js"></script>
+    <script src="src/ipc/guest_transport.js"></script>
+
+    <!-- API Routing -->
+    <script src="src/api/guest/metaos_core.js"></script>
+    <script src="src/api/guest/legacy_wrapper.js"></script>
+    <script src="src/api/guest/guest_builder.js"></script>
+    <script src="src/api/host/api_router.js"></script>
+    
+    <!-- Shell (Desktop Environment) -->
+    <script src="src/shell/services/lpml_renderer.js"></script>
+    <script src="src/shell/core/theme_manager.js"></script>
+    <script src="src/shell/core/uri_router.js"></script>
+    <script src="src/shell/panels/tree_view.js"></script>
+    <script src="src/shell/panels/explorer.js"></script>
+    <script src="src/shell/panels/chat_panel.js"></script>
+    <script src="src/shell/modals/editor_modal.js"></script>
+    <script src="src/shell/modals/media_viewer.js"></script>
+    <script src="src/shell/modals/time_machine_modal.js"></script>
+    <script src="src/shell/modals/api_settings_modal.js"></script>
+    <script src="src/shell/modals/sync_modal.js"></script>
+    <script src="src/shell/windowing/process_manager.js"></script>
+    <script src="src/shell/core/shell_controller.js"></script>
+    
+    <!-- Config & Entry -->
+    <script src="src/config/constants.js"></script>
+    <script src="src/config/system_prompts.js"></script>
+    <script src="src/config/default_files.js"></script>
+    <script src="src/main.js"></script>
+
+</body>
+</html>

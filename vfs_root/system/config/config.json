@@ -1,0 +1,15 @@
+{
+    "theme": "system/themes/light.json",
+    "language": "Japanese",
+    "username": "User",
+    "agentName": "ミャク楽",
+    "autoUpdateSystemFiles": true,
+    "llm": {
+        "model": "gemini-3-flash-preview",
+        "temperature": 1
+    },
+    "network": {
+        "proxyUrl": "https://corsproxy.io/?",
+        "allowCredentialsWithProxy": false
+    }
+}

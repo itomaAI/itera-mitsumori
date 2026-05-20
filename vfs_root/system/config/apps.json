@@ -1,0 +1,30 @@
+[
+    {
+        "id": "tasks",
+        "name": "Tasks",
+        "icon": "✅",
+        "path": "apps/tasks.html",
+        "description": "Manage daily to-dos"
+    },
+    {
+        "id": "calendar",
+        "name": "Calendar",
+        "icon": "📅",
+        "path": "apps/calendar.html",
+        "description": "Schedule events"
+    },
+    {
+        "id": "settings",
+        "name": "Settings",
+        "icon": "⚙️",
+        "path": "apps/settings.html",
+        "description": "System configuration"
+    },
+    {
+        "id": "autoexcel",
+        "name": "AutoExcel",
+        "icon": "📊",
+        "path": "apps/autoexcel.html",
+        "description": "Automate Excel tasks"
+    }
+]
