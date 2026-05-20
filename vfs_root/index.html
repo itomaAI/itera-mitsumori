@@ -45,9 +45,9 @@
             <section class="bg-panel rounded-2xl p-8 border border-border-main shadow-lg relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110"></div>
                 
-                <h2 class="text-xl font-bold mb-2">積算・見積もり統合アシスタント</h2>
+                <h2 class="text-xl font-bold mb-2">見積もりサポートアシスタント</h2>
                 <p class="text-sm text-text-muted mb-8 leading-relaxed max-w-lg">
-                    OCR解析結果の確認や、各業者の見積もり内訳書を参考フォーマットへ統合する作業をAIがサポートします。<br>
+                    OCR解析結果の確認や見積書の比較、自社フォーマットへの転記などの作業をAIがサポートします。<br>
                     右側のチャットパネルからAIに指示を出してください。
                 </p>
                 
@@ -99,14 +99,14 @@
                 <h3 class="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">AI への指示の例</h3>
                 <p class="text-[11px] text-text-muted mb-4">チャットパネルから以下のように指示できます。</p>
                 <div class="flex flex-col gap-2">
-                    <button onclick="if(window.MetaOS) MetaOS.ai.ask('OCR処理済みのデータをAutoExcelで開いてください')" class="text-left text-xs bg-panel hover:bg-hover px-3 py-2.5 rounded-lg border border-border-main transition text-text-main shadow-sm truncate">
-                        "OCR処理済みのデータを開いて"
+                    <button onclick="if(window.MetaOS) MetaOS.ai.ask('見積書を自社フォーマットに変換してください')" class="text-left text-xs bg-panel hover:bg-hover px-3 py-2.5 rounded-lg border border-border-main transition text-text-main shadow-sm truncate">
+                        "見積書を自社フォーマットに変換して"
                     </button>
-                    <button onclick="if(window.MetaOS) MetaOS.ai.ask('各社の見積もりデータを参考フォーマットに合わせて統合してください')" class="text-left text-xs bg-panel hover:bg-hover px-3 py-2.5 rounded-lg border border-border-main transition text-text-main shadow-sm truncate">
-                        "データを統合して"
+                    <button onclick="if(window.MetaOS) MetaOS.ai.ask('A社とB社の見積を比較して違いを教えてください')" class="text-left text-xs bg-panel hover:bg-hover px-3 py-2.5 rounded-lg border border-border-main transition text-text-main shadow-sm truncate">
+                        "見積を比較して"
                     </button>
                     <button onclick="if(window.MetaOS) MetaOS.ai.ask('見積もりの提出期限をカレンダーに登録しておいて')" class="text-left text-xs bg-panel hover:bg-hover px-3 py-2.5 rounded-lg border border-border-main transition text-text-main shadow-sm truncate">
-                        "提出期限をカレンダーに入れて"
+                        "提出期限をカレンダーに登録して"
                     </button>
                 </div>
             </section>
